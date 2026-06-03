@@ -29,7 +29,10 @@ export async function fetchFigmaImageUrl(fileKey: string, nodeId: string, token:
     `https://api.figma.com/v1/images/${fileKey}?ids=${encodeURIComponent(encoded)}&format=png&scale=2`,
     { headers: { "X-Figma-Token": token } }
   );
-  if (!res.ok) throw new Error(`Figma images API error: ${res.status}`);
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "");
+    throw new Error(`Figma images API error: ${res.status}${detail ? ` — ${detail}` : ""}`);
+  }
   const data = await res.json();
   if (data.err) throw new Error(`Figma image error: ${data.err}`);
   const imageUrl = data.images?.[encoded] ?? data.images?.[Object.keys(data.images)[0]];

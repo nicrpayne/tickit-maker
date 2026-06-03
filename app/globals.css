@@ -63,17 +63,19 @@ body {
 }
 .btn-secondary:hover { background: var(--bg); }
 
-input, textarea, select {
-  background: var(--surface);
-  color: var(--text);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 0.5rem 0.75rem;
-  font-size: 0.875rem;
-  outline: none;
-  width: 100%;
-  transition: border-color 0.15s;
-}
-input:focus, textarea:focus, select:focus {
-  border-color: var(--primary);
+@layer base {
+  input:not([type="checkbox"]):not([type="radio"]), textarea, select {
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    outline: none;
+    width: 100%;
+    transition: border-color 0.15s;
+  }
+  input:not([type="checkbox"]):not([type="radio"]):focus, textarea:focus, select:focus {
+    border-color: var(--primary);
+  }
 }

@@ -57,7 +57,7 @@ export default function TemplatesPage() {
       <main className="max-w-3xl mx-auto px-6 py-10">
         <Link href="/" className="text-xs flex items-center gap-1 mb-6" style={{ color: "var(--text-muted)" }}>← Dashboard</Link>
 
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
           <div>
             <h1 className="text-2xl font-bold mb-1" style={{ color: "var(--text)" }}>Template library</h1>
             <p className="text-sm" style={{ color: "var(--text-muted)" }}>

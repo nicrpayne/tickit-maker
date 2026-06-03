@@ -54,9 +54,10 @@ export default function GeneratorPage() {
     try {
       const res = await fetch(`/api/generate?action=preview&fileKey=${parsed.fileKey}&nodeId=${encodeURIComponent(parsed.nodeId)}`);
       const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? `Server error ${res.status}`);
       if (data.imageUrl) setPreviewImageUrl(data.imageUrl);
-    } catch {
-      setError("Could not fetch Figma frame. Check the URL and try again.");
+    } catch (err) {
+      setError((err as Error).message || "Could not fetch Figma frame. Check the URL and try again.");
     } finally {
       setFetchingFigma(false);
     }
@@ -77,7 +78,7 @@ export default function GeneratorPage() {
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fileKey: parsed.fileKey, nodeId: parsed.nodeId }),
+        body: JSON.stringify({ fileKey: parsed.fileKey, nodeId: parsed.nodeId, imageUrl: previewImageUrl || undefined }),
       });
       clearInterval(stepInterval);
       if (!res.ok) {
@@ -127,13 +128,13 @@ export default function GeneratorPage() {
       {hasKey === false && <LinearKeyModal onConnect={() => setHasKey(true)} />}
       <Nav />
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 flex-col md:flex-row md:overflow-hidden">
         {/* Left sidebar */}
         <aside
-          className="w-[420px] shrink-0 border-r flex flex-col"
+          className="w-full md:w-[420px] shrink-0 border-b md:border-b-0 md:border-r flex flex-col"
           style={{ borderColor: "var(--border)", background: "var(--surface)" }}
         >
-          <div className="p-6 flex flex-col gap-6 flex-1 overflow-auto">
+          <div className="p-6 flex flex-col gap-6 md:flex-1 md:overflow-auto">
             <div>
               <Link href="/" className="text-xs flex items-center gap-1 mb-6" style={{ color: "var(--text-muted)" }}>
                 ← Dashboard
@@ -155,14 +156,8 @@ export default function GeneratorPage() {
             <div className="flex flex-col gap-3">
               <label className="text-sm font-medium" style={{ color: "var(--text)" }}>Figma frame URL</label>
               <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: "var(--text-muted)" }}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
-                    </svg>
-                  </div>
+                <div className="flex-1">
                   <input
-                    className="pl-9"
                     placeholder="https://www.figma.com/design/..."
                     value={figmaUrl}
                     onChange={(e) => setFigmaUrl(e.target.value)}
@@ -190,7 +185,7 @@ export default function GeneratorPage() {
 
             {previewImageUrl && (
               <div className="rounded-lg overflow-hidden border" style={{ borderColor: "var(--border)" }}>
-                <img src={previewImageUrl} alt="Figma frame preview" className="w-full h-48 object-cover" />
+                <img src={previewImageUrl} alt="Figma frame preview" className="w-full" />
               </div>
             )}
 
@@ -237,7 +232,7 @@ export default function GeneratorPage() {
         </aside>
 
         {/* Right panel */}
-        <main className="flex-1 overflow-auto flex flex-col">
+        <main className="flex-1 md:overflow-auto flex flex-col">
           {genState === "idle" && (
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center">

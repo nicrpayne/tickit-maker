@@ -57,7 +57,6 @@ export default function Nav({ onDisconnect }: NavProps) {
 
   const navLinks = [
     { href: "/generator", label: "AI generator" },
-    { href: "/pusher", label: "Ticket pusher" },
     { href: "/templates", label: "Templates" },
   ];
 
@@ -102,10 +101,10 @@ export default function Nav({ onDisconnect }: NavProps) {
 
         <div className="flex items-center gap-2">
           <span
-            className="w-2 h-2 rounded-full"
+            className="w-2 h-2 rounded-full shrink-0"
             style={{ background: hasKey ? "#22c55e" : "#d1d5db" }}
           />
-          <span className="text-xs" style={{ color: "var(--text-muted)" }}>
+          <span className="hidden sm:inline text-xs" style={{ color: "var(--text-muted)" }}>
             {hasKey ? "Linear connected" : "Not connected"}
           </span>
         </div>
@@ -113,7 +112,7 @@ export default function Nav({ onDisconnect }: NavProps) {
         {hasKey && (
           <button
             onClick={disconnect}
-            className="text-xs px-2.5 py-1 rounded-md transition-colors"
+            className="hidden sm:block text-xs px-2.5 py-1 rounded-md transition-colors"
             style={{ color: "var(--text-muted)", border: "1px solid var(--border)" }}
           >
             Disconnect

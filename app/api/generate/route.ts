@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
   if (!anthropicKey) return NextResponse.json({ error: "ANTHROPIC_API_KEY not set" }, { status: 500 });
 
   try {
-    const imageUrl = await fetchFigmaImageUrl(body.fileKey, body.nodeId, figmaToken);
+    const imageUrl = body.imageUrl ?? await fetchFigmaImageUrl(body.fileKey, body.nodeId, figmaToken);
     const imageBase64 = await figmaImageToBase64(imageUrl);
 
     const client = new Anthropic({ apiKey: anthropicKey });
