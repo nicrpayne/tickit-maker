@@ -2,13 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { fetchFigmaImageUrl, figmaImageToBase64 } from "@/lib/figma";
 
-const SYSTEM_PROMPT = `You are an expert product manager and technical writer. Given a screenshot of a Figma design frame, generate a well-structured Linear issue using the following markdown template exactly.
+const SYSTEM_PROMPT = `You are an expert product manager and technical writer. Given a screenshot of a Figma design frame, generate a well-structured Linear issue using the following format exactly.
 
-Your output must be valid JSON with two fields:
-- "title": a concise, sentence-case issue title (no more than 10 words)
-- "body": the full markdown body using the template below
+Your response must use these exact delimiters — nothing before or after:
 
-Template:
+---TITLE---
+<concise sentence-case issue title, no more than 10 words>
+---BODY---
+<full markdown body using the template below>
+---END---
+
+Template for the body:
 ## User Story
 As a [persona], I want to [action], so that [outcome].
 
@@ -91,7 +95,7 @@ export async function POST(req: NextRequest) {
             },
             {
               type: "text",
-              text: "Generate a Linear ticket for this Figma design frame. Return only valid JSON with 'title' and 'body' fields.",
+              text: "Generate a Linear ticket for this Figma design frame. Use the ---TITLE--- / ---BODY--- / ---END--- delimiters exactly as instructed.",
             },
           ],
         },
@@ -99,13 +103,15 @@ export async function POST(req: NextRequest) {
     });
 
     const rawText = message.content.find((b) => b.type === "text")?.text ?? "";
-    const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error("Claude did not return valid JSON");
+    const titleMatch = rawText.match(/---TITLE---\s*([\s\S]*?)\s*---BODY---/);
+    const bodyMatch = rawText.match(/---BODY---\s*([\s\S]*?)\s*---END---/);
+    if (!titleMatch || !bodyMatch) throw new Error("Claude response was missing expected delimiters");
 
-    const parsed = JSON.parse(jsonMatch[0]);
-    if (!parsed.title || !parsed.body) throw new Error("Missing title or body in Claude response");
+    const title = titleMatch[1].trim();
+    const ticketBody = bodyMatch[1].trim();
+    if (!title || !ticketBody) throw new Error("Missing title or body in Claude response");
 
-    return NextResponse.json({ title: parsed.title, body: parsed.body });
+    return NextResponse.json({ title, body: ticketBody });
   } catch (err) {
     console.error("[/api/generate]", err);
     return NextResponse.json({ error: (err as Error).message }, { status: 500 });

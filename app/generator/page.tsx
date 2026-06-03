@@ -86,7 +86,7 @@ export default function GeneratorPage() {
       }
       const data = await res.json();
       setTitle(data.title ?? "Untitled ticket");
-      setBody(data.body ?? "");
+      setBody((data.body ?? "").replace("[Figma embed link — provided by the caller]", figmaUrl));
       setGenState("done");
     } catch (err) {
       clearInterval(stepInterval);
