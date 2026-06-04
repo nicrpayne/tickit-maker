@@ -473,6 +473,15 @@ export default function BulkPage() {
                   </div>
                 ))}
 
+                <div className="mt-6 h-8 flex items-center">
+                  <p
+                    key={msgIdx}
+                    className="text-sm italic"
+                    style={{ color: "var(--text-muted)", animation: "fade-msg 5s ease-in-out forwards" }}
+                  >
+                    {WITTY_MESSAGES[msgIdx]}
+                  </p>
+                </div>
               </div>
             </div>
           )}
