@@ -37,7 +37,7 @@ const ANALYSE_STEPS = [
 ];
 
 const WITTY_MESSAGES = [
-  "Translating "make it pop" into acceptance criteria…",
+  'Translating "make it pop" into acceptance criteria…',
   "Identifying which screen changed last-minute…",
   "Quietly judging the spacing. It's fine. It's fine.",
   "Converting designer intent to developer requirements…",
