@@ -27,7 +27,7 @@ interface Ticket {
   errorMsg?: string;
 }
 
-type AnalyseState = "idle" | "analysing" | "done";
+type AnalyseState = "idle" | "analysing" | "streaming" | "done";
 
 const ANALYSE_STEPS = [
   "Reading screens",
@@ -101,11 +101,11 @@ export default function BulkPage() {
   const [msgIdx, setMsgIdx] = useState(0);
 
   useEffect(() => {
-    if (analyseState !== "analysing") return;
+    if (analyseState !== "analysing" && analyseState !== "streaming") return;
     setMsgIdx(Math.floor(Math.random() * WITTY_MESSAGES.length));
     const id = setInterval(() => {
       setMsgIdx(() => Math.floor(Math.random() * WITTY_MESSAGES.length));
-    }, 3000);
+    }, 5000);
     return () => clearInterval(id);
   }, [analyseState]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -156,12 +156,18 @@ export default function BulkPage() {
   async function handleAnalyse() {
     if (images.length === 0) return;
     setError("");
+    setTickets([]);
     setAnalyseState("analysing");
     setStepIdx(0);
 
     const stepInterval = setInterval(() => {
       setStepIdx((i) => Math.min(i + 1, ANALYSE_STEPS.length - 1));
     }, 1400);
+
+    let stepCleared = false;
+    function clearStep() {
+      if (!stepCleared) { stepCleared = true; clearInterval(stepInterval); }
+    }
 
     try {
       const res = await fetch("/api/bulk-generate", {
@@ -172,25 +178,59 @@ export default function BulkPage() {
           figmaFileUrl: figmaFileUrl.trim() || undefined,
         }),
       });
-      clearInterval(stepInterval);
-      if (!res.ok) {
+
+      if (!res.ok || !res.body) {
+        clearStep();
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error ?? `API error ${res.status}`);
       }
-      const data = await res.json();
-      setTickets(
-        data.tickets.map((t: { title: string; body: string }, i: number) => ({
-          id: `ticket-${i}`,
-          title: t.title,
-          body: t.body,
-          selected: true,
-          expanded: false,
-          status: "ready" as const,
-        }))
-      );
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let lineBuffer = "";
+      let ticketCount = 0;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        lineBuffer += decoder.decode(value, { stream: true });
+        const lines = lineBuffer.split("\n");
+        lineBuffer = lines.pop() ?? "";
+
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          let data: { title?: string; body?: string; error?: string };
+          try { data = JSON.parse(line); } catch { continue; }
+
+          if (data.error) throw new Error(data.error);
+          if (!data.title || !data.body) continue;
+
+          if (ticketCount === 0) {
+            clearStep();
+            setAnalyseState("streaming");
+          }
+          ticketCount++;
+
+          setTickets((prev) => [
+            ...prev,
+            {
+              id: `ticket-${prev.length}`,
+              title: data.title!,
+              body: data.body!,
+              selected: true,
+              expanded: false,
+              status: "ready" as const,
+            },
+          ]);
+        }
+      }
+
+      clearStep();
+      if (ticketCount === 0) throw new Error("No tickets could be generated from this image");
       setAnalyseState("done");
     } catch (err) {
-      clearInterval(stepInterval);
+      clearStep();
       setError((err as Error).message);
       setAnalyseState("idle");
     }
@@ -433,24 +473,11 @@ export default function BulkPage() {
                   </div>
                 ))}
 
-                {/* Witty rotating message */}
-                <div className="mt-8 h-8 flex items-center">
-                  <p
-                    key={msgIdx}
-                    className="text-sm italic"
-                    style={{
-                      color: "var(--text-muted)",
-                      animation: "fade-msg 3s ease-in-out forwards",
-                    }}
-                  >
-                    {WITTY_MESSAGES[msgIdx]}
-                  </p>
-                </div>
               </div>
             </div>
           )}
 
-          {analyseState === "done" && tickets.length > 0 && (
+          {(analyseState === "streaming" || analyseState === "done") && tickets.length > 0 && (
             <div className="flex flex-col h-full">
               {/* Toolbar */}
               <div
@@ -470,18 +497,15 @@ export default function BulkPage() {
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  {allPushed && (
-                    <button
-                      className="btn-secondary text-sm"
-                      onClick={reset}
-                    >
+                  {allPushed && analyseState === "done" && (
+                    <button className="btn-secondary text-sm" onClick={reset}>
                       New batch
                     </button>
                   )}
                   <button
                     className="btn-primary flex items-center gap-2"
                     onClick={handlePushSelected}
-                    disabled={pushing || !anyReady || !teamId || !stateId}
+                    disabled={pushing || !anyReady || !teamId || !stateId || analyseState === "streaming"}
                   >
                     {pushing ? (
                       <>
@@ -503,7 +527,7 @@ export default function BulkPage() {
               {/* Ticket list */}
               <div className="flex-1 overflow-auto px-6 py-4 flex flex-col gap-3">
                 {tickets.map((ticket, idx) => (
-                  <div key={ticket.id} className="card overflow-hidden" style={{ opacity: ticket.selected ? 1 : 0.5 }}>
+                  <div key={ticket.id} className="card overflow-hidden" style={{ opacity: ticket.selected ? 1 : 0.5, animation: "ticket-in 0.3s ease-out forwards" }}>
                     <div
                       className="flex items-center gap-3 px-4 py-3 cursor-pointer"
                       onClick={() => setTickets((ts) => ts.map((t) => t.id === ticket.id ? { ...t, expanded: !t.expanded } : t))}
@@ -576,6 +600,31 @@ export default function BulkPage() {
                     )}
                   </div>
                 ))}
+
+                {/* Streaming indicator with cycling messages */}
+                {analyseState === "streaming" && (
+                  <div
+                    className="card px-4 py-3 flex flex-col gap-1.5"
+                    style={{ borderStyle: "dashed" }}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="inline-block w-3 h-3 rounded-full border-2 border-t-transparent animate-spin shrink-0"
+                        style={{ borderColor: "var(--primary)", borderTopColor: "transparent" }}
+                      />
+                      <span className="text-sm font-medium" style={{ color: "var(--text-muted)" }}>
+                        Generating more tickets…
+                      </span>
+                    </div>
+                    <p
+                      key={msgIdx}
+                      className="text-xs italic pl-5"
+                      style={{ color: "var(--text-muted)", animation: "fade-msg 5s ease-in-out forwards" }}
+                    >
+                      {WITTY_MESSAGES[msgIdx]}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           )}
