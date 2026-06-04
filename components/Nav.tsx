@@ -56,7 +56,8 @@ export default function Nav({ onDisconnect }: NavProps) {
     : "?";
 
   const navLinks = [
-    { href: "/generator", label: "AI generator" },
+    { href: "/bulk", label: "Screen analyser" },
+    { href: "/generator", label: "Single generator" },
     { href: "/templates", label: "Templates" },
   ];
 

@@ -50,17 +50,28 @@ export default function Dashboard() {
 
   const cards = [
     {
+      href: "/bulk",
+      icon: (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/>
+        </svg>
+      ),
+      title: "Screen analyser",
+      description: "Screenshot your Figma artboard and Claude generates a ticket for every screen it finds.",
+      meta: "Bulk · Powered by Claude",
+    },
+    {
       href: "/generator",
       icon: (
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
         </svg>
       ),
-      title: "AI generator",
-      description: "Paste a Figma URL and Claude will draft a fully structured Linear ticket in seconds.",
-      meta: "Powered by Claude",
+      title: "Single generator",
+      description: "Paste a Figma frame URL and Claude drafts one fully structured ticket with precision.",
+      meta: "Single frame · Powered by Claude",
     },
-{
+    {
       href: "/templates",
       icon: (
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

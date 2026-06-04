@@ -2,17 +2,19 @@
 
 Generate structured Linear tickets directly from Figma designs using Claude AI.
 
-Paste a Figma frame URL, TicKit Maker fetches a screenshot of the frame, sends it to Claude, and returns a fully formatted Linear ticket with a user story, acceptance criteria, requirements, and more — ready to review, edit, and push to Linear in one click.
+Screenshot your Figma artboard, drop it into TicKit Maker, and Claude identifies every screen and writes a fully structured Linear ticket for each one — user stories, acceptance criteria, requirements, and all. Review, edit, select the tickets you want, and push them to Linear in one go.
 
 ---
 
 ## Features
 
-- **AI generator** — paste any Figma frame URL and Claude drafts a structured ticket from the visual design
+- **Screen analyser** *(primary)* — drop a screenshot of your Figma artboard and Claude generates a ticket per screen. Supports multiple screenshots at once. Automatically detects when screens share a reusable component pattern and consolidates them into one ticket.
+- **Single generator** — paste a specific Figma frame URL for precision one-off ticket generation
 - **Template library** — save and reuse ticket structures across your team
-- **Linear integration** — push tickets directly to any team and workflow state in your Linear workspace
+- **Bulk push** — review, select, and push multiple tickets to Linear in one go with per-ticket status
+- **Inline editing** — edit ticket titles and bodies before pushing
+- **Linear integration** — push to any team and workflow state in your workspace
 - **Dark mode** — toggle in the nav bar
-- **Editable output** — review and edit the generated ticket before pushing
 
 ---
 
@@ -37,7 +39,9 @@ cp .env.example .env.local
 | Variable | Description | Where to get it |
 |---|---|---|
 | `ANTHROPIC_API_KEY` | Powers ticket generation via Claude | [console.anthropic.com](https://console.anthropic.com) → API Keys |
-| `FIGMA_API_TOKEN` | Fetches frame images from Figma | Figma → Settings → Personal access tokens |
+| `FIGMA_API_TOKEN` | Used by the single generator to fetch frame images | Figma → Settings → Personal access tokens |
+
+> **Note:** `FIGMA_API_TOKEN` is only required for the Single generator. The Screen analyser works entirely from uploaded screenshots — no Figma API needed.
 
 Both keys are used **server-side only** and are never exposed to the browser.
 
@@ -59,17 +63,27 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## Usage
 
-### Generating a ticket
+### Screen analyser (recommended)
 
-1. Open a Figma file and right-click a frame → **Copy link**
-   - The URL must include a `?node-id=` parameter — link to a specific frame, not a whole page
-2. Paste the URL into the AI generator
+1. In Figma, screenshot your artboard showing the screens you want to ticket
+2. Go to **Screen analyser** and paste (`Ctrl+V`), drag & drop, or browse to upload
+3. Add more screenshots if your design spans multiple artboards
+4. Optionally paste the Figma file URL — it gets embedded in every ticket's Design section
+5. Select your Linear **Team** and **State**
+6. Click **Analyse screens** — Claude identifies each screen and generates a full ticket
+7. Review the list, deselect anything you don't want, expand to edit inline
+8. Click **Push X tickets** — each ticket is pushed to Linear with live status
+
+> **Tip:** Claude detects when multiple screens are the same component with different data (e.g. an app hub template for 5 different apps) and consolidates them into one reusable-component ticket automatically.
+
+### Single generator
+
+1. Open a Figma file and right-click a specific frame → **Copy link**
+   - The URL must include a `?node-id=` parameter
+2. Paste the URL into the Single generator
 3. Optionally click **Fetch** to preview the frame before generating
-4. Select your Linear **Team** and **State**
-5. Click **Generate ticket** — Claude analyses the design and writes the ticket
-6. Edit the output as needed, then click **Push to Linear**
-
-> **Tip:** Frames with visible text labels, component names, and clear hierarchy produce the best tickets. Avoid linking to a whole Figma page.
+4. Select your Linear **Team** and **State**, then click **Generate ticket**
+5. Edit as needed, then click **Push to Linear**
 
 ### Templates
 
@@ -85,24 +99,28 @@ The Template library lets you save custom ticket structures. Any saved template 
 | Language | TypeScript |
 | Styling | Tailwind CSS v4 |
 | AI | [Anthropic Claude](https://anthropic.com) via `@anthropic-ai/sdk` |
-| Design source | [Figma REST API](https://www.figma.com/developers/api) |
+| Design source | Figma REST API (single generator) / screenshot upload (screen analyser) |
 | Ticket destination | [Linear GraphQL API](https://developers.linear.app) |
 
 ---
 
 ## Deployment
 
-The easiest path is [Vercel](https://vercel.com):
+### Vercel (recommended)
 
 1. Push to GitHub (already done)
 2. Import the repo at [vercel.com/new](https://vercel.com/new)
-3. Add `ANTHROPIC_API_KEY` and `FIGMA_API_TOKEN` as environment variables in the Vercel project settings
+3. Add environment variables in the Vercel project settings:
+   - `ANTHROPIC_API_KEY` — required
+   - `FIGMA_API_TOKEN` — required only if using the Single generator
 4. Deploy — Vercel auto-detects Next.js and handles the rest
+
+Each team member connects their own Linear API key in the app — it's stored in their browser and never sent to the server.
 
 ---
 
 ## Notes
 
-- The Figma images export API has a rate limit. In normal use (a few tickets per session) you won't hit it. If you do, wait a few minutes and try again.
-- Linear API keys are stored in localStorage per-browser. Each team member connects their own key.
+- The Figma images export API (used by the Single generator) has a strict rate limit. In normal use you won't hit it, but heavy testing on a single token can exhaust the hourly quota. The Screen analyser has no such limitation.
 - Generated ticket content is a starting point — always review before pushing.
+- Claude may produce slightly different ticket counts across runs for the same screenshots. Results are consistent for well-structured designs with clear screen boundaries.

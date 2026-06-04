@@ -24,7 +24,7 @@ export async function fetchFigmaNode(fileKey: string, nodeId: string, token: str
 }
 
 export async function fetchFigmaImageUrl(fileKey: string, nodeId: string, token: string): Promise<string> {
-  const encoded = nodeId.replace(/-/g, ":");
+const encoded = nodeId.replace(/-/g, ":");
   const res = await fetch(
     `https://api.figma.com/v1/images/${fileKey}?ids=${encodeURIComponent(encoded)}&format=png&scale=2`,
     { headers: { "X-Figma-Token": token } }
