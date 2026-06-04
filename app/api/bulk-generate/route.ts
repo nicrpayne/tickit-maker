@@ -68,7 +68,6 @@ interface ImageInput {
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
 
-  // Support both single image (legacy) and multiple images
   const images: ImageInput[] = body?.images
     ? body.images
     : body?.imageBase64 && body?.mediaType
@@ -88,52 +87,93 @@ export async function POST(req: NextRequest) {
 
   const systemPrompt = SYSTEM_PROMPT.replace(/FIGMA_LINK_PLACEHOLDER/g, figmaLink);
 
-  try {
-    const client = new Anthropic({ apiKey: anthropicKey });
+  const client = new Anthropic({ apiKey: anthropicKey });
 
-    const imageBlocks = images.map((img) => ({
-      type: "image" as const,
-      source: { type: "base64" as const, media_type: img.mediaType as "image/png" | "image/jpeg" | "image/gif" | "image/webp", data: img.imageBase64 },
-    }));
+  const imageBlocks = images.map((img) => ({
+    type: "image" as const,
+    source: {
+      type: "base64" as const,
+      media_type: img.mediaType as "image/png" | "image/jpeg" | "image/gif" | "image/webp",
+      data: img.imageBase64,
+    },
+  }));
 
-    const message = await client.messages.create({
-      model: "claude-sonnet-4-6",
-      max_tokens: 8192,
-      system: systemPrompt,
-      messages: [
-        {
-          role: "user",
-          content: [
-            ...imageBlocks,
+  const encoder = new TextEncoder();
+
+  const stream = new ReadableStream({
+    async start(controller) {
+      let buffer = "";
+
+      function flush() {
+        // Extract every complete ---TICKET--- ... ---END--- block from the buffer
+        while (true) {
+          const start = buffer.indexOf("---TICKET---");
+          const end = buffer.indexOf("---END---");
+          if (start === -1 || end === -1 || end < start) break;
+
+          const block = buffer.slice(start, end + 9);
+          buffer = buffer.slice(end + 9);
+
+          const titleMatch = block.match(/---TITLE---\s*([\s\S]*?)\s*---BODY---/);
+          const bodyMatch = block.match(/---BODY---\s*([\s\S]*?)\s*---END---/);
+          if (!titleMatch || !bodyMatch) continue;
+
+          const title = titleMatch[1].trim();
+          const ticketBody = bodyMatch[1].trim();
+          if (!title || !ticketBody) continue;
+
+          controller.enqueue(
+            encoder.encode(JSON.stringify({ title, body: ticketBody }) + "\n")
+          );
+        }
+      }
+
+      try {
+        const messageStream = client.messages.stream({
+          model: "claude-sonnet-4-6",
+          max_tokens: 8192,
+          system: systemPrompt,
+          messages: [
             {
-              type: "text",
-              text: `Identify every distinct screen across ${images.length > 1 ? "all " + images.length + " images" : "this image"} and generate one Linear ticket per screen using the ---TICKET--- blocks exactly as instructed. Apply the repeating component rule where relevant.`,
+              role: "user",
+              content: [
+                ...imageBlocks,
+                {
+                  type: "text",
+                  text: `Identify every distinct screen across ${images.length > 1 ? "all " + images.length + " images" : "this image"} and generate one Linear ticket per screen using the ---TICKET--- blocks exactly as instructed. Apply the repeating component rule where relevant.`,
+                },
+              ],
             },
           ],
-        },
-      ],
-    });
+        });
 
-    const rawText = message.content.find((b) => b.type === "text")?.text ?? "";
-    const blocks = rawText.split("---TICKET---").map((s) => s.trim()).filter(Boolean);
+        for await (const event of messageStream) {
+          if (
+            event.type === "content_block_delta" &&
+            event.delta.type === "text_delta"
+          ) {
+            buffer += event.delta.text;
+            flush();
+          }
+        }
 
-    const tickets = blocks.flatMap((block) => {
-      const titleMatch = block.match(/---TITLE---\s*([\s\S]*?)\s*---BODY---/);
-      const bodyMatch = block.match(/---BODY---\s*([\s\S]*?)\s*---END---/);
-      if (!titleMatch || !bodyMatch) return [];
-      const title = titleMatch[1].trim();
-      const ticketBody = bodyMatch[1].trim();
-      if (!title || !ticketBody) return [];
-      return [{ title, body: ticketBody }];
-    });
+        // Final flush in case anything remains
+        flush();
+      } catch (err) {
+        controller.enqueue(
+          encoder.encode(JSON.stringify({ error: (err as Error).message }) + "\n")
+        );
+      }
 
-    if (tickets.length === 0) {
-      return NextResponse.json({ error: "No tickets could be generated from this image" }, { status: 422 });
-    }
+      controller.close();
+    },
+  });
 
-    return NextResponse.json({ tickets });
-  } catch (err) {
-    console.error("[/api/bulk-generate]", err);
-    return NextResponse.json({ error: (err as Error).message }, { status: 500 });
-  }
+  return new Response(stream, {
+    headers: {
+      "Content-Type": "application/x-ndjson",
+      "Cache-Control": "no-cache, no-store",
+      "X-Accel-Buffering": "no",
+    },
+  });
 }
