@@ -79,3 +79,26 @@ body {
     border-color: var(--primary);
   }
 }
+
+@keyframes scan {
+  0%   { transform: translateY(-100%); }
+  100% { transform: translateY(300%); }
+}
+.scan-line {
+  position: absolute;
+  left: 0; right: 0;
+  height: 35%;
+  background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.45) 50%, transparent);
+  animation: scan 1.8s ease-in-out infinite;
+  pointer-events: none;
+}
+.dark .scan-line {
+  background: linear-gradient(to bottom, transparent, rgba(100,160,255,0.2) 50%, transparent);
+}
+
+@keyframes fade-msg {
+  0%   { opacity: 0; transform: translateY(6px); }
+  15%  { opacity: 1; transform: translateY(0); }
+  85%  { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-6px); }
+}

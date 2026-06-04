@@ -56,7 +56,7 @@ export default function Dashboard() {
           <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/>
         </svg>
       ),
-      title: "Screen analyser",
+      title: "Circuit",
       description: "Screenshot your Figma artboard and Claude generates a ticket for every screen it finds.",
       meta: "Bulk · Powered by Claude",
     },
@@ -67,7 +67,7 @@ export default function Dashboard() {
           <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
         </svg>
       ),
-      title: "Single generator",
+      title: "Spark",
       description: "Paste a Figma frame URL and Claude drafts one fully structured ticket with precision.",
       meta: "Single frame · Powered by Claude",
     },

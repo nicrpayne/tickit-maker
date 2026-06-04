@@ -56,8 +56,8 @@ export default function Nav({ onDisconnect }: NavProps) {
     : "?";
 
   const navLinks = [
-    { href: "/bulk", label: "Screen analyser" },
-    { href: "/generator", label: "Single generator" },
+    { href: "/bulk", label: "Circuit" },
+    { href: "/generator", label: "Spark" },
     { href: "/templates", label: "Templates" },
   ];
 
@@ -67,10 +67,8 @@ export default function Nav({ onDisconnect }: NavProps) {
       style={{ background: "var(--surface)", borderColor: "var(--border)" }}
     >
       <div className="flex items-center gap-8">
-        <Link href="/" className="flex items-center gap-2 font-semibold text-sm">
-          <span style={{ color: "var(--text)" }}>Tic</span>
-          <span style={{ color: "var(--primary)", fontWeight: 700 }}>Kit</span>
-          <span style={{ color: "var(--text)" }}>Maker</span>
+        <Link href="/" className="font-semibold text-sm">
+          <span style={{ color: "var(--text)" }}>Tic</span><span style={{ color: "var(--primary)", fontWeight: 700 }}>Kit</span>
         </Link>
         <div className="hidden md:flex items-center gap-1">
           {navLinks.map((l) => (

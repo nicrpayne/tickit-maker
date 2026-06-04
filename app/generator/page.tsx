@@ -8,6 +8,7 @@ import TicketPreview from "@/components/TicketPreview";
 import TeamStateSelect from "@/components/TeamStateSelect";
 import { parseFigmaUrl } from "@/lib/figma";
 import { createIssue, fetchTeams } from "@/lib/linear";
+import TicketShelf from "@/components/TicketShelf";
 
 type GenState = "idle" | "generating" | "done";
 
@@ -39,6 +40,7 @@ export default function GeneratorPage() {
   const [successId, setSuccessId] = useState("");
   const [successUrl, setSuccessUrl] = useState("");
   const [fetchingFigma, setFetchingFigma] = useState(false);
+  const [shelfOpen, setShelfOpen] = useState(false);
   const [previewImageUrl, setPreviewImageUrl] = useState("");
 
   useEffect(() => {
@@ -147,7 +149,7 @@ export default function GeneratorPage() {
                   <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
                 </svg>
               </div>
-              <h1 className="text-xl font-bold mb-1" style={{ color: "var(--text)" }}>AI generator</h1>
+              <h1 className="text-xl font-bold mb-1" style={{ color: "var(--text)" }}>Spark</h1>
               <p className="text-sm" style={{ color: "var(--text-muted)" }}>
                 Paste a Figma frame URL and Claude will write a structured Linear ticket.
               </p>
@@ -284,7 +286,18 @@ export default function GeneratorPage() {
 
           {genState === "done" && (
             <div className="flex flex-col h-full">
-              <div className="card m-6 flex-1 flex flex-col overflow-hidden">
+              <div className="flex justify-end px-6 pt-6 pb-0">
+                <button
+                  className="btn-secondary flex items-center gap-2 text-sm"
+                  onClick={() => setShelfOpen(true)}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                  </svg>
+                  Preview
+                </button>
+              </div>
+              <div className="card m-6 mt-3 flex-1 flex flex-col overflow-hidden">
                 <TicketPreview
                   value={body}
                   onChange={setBody}
@@ -302,6 +315,15 @@ export default function GeneratorPage() {
           )}
         </main>
       </div>
+
+      <TicketShelf
+        isOpen={shelfOpen}
+        onClose={() => setShelfOpen(false)}
+        title={title}
+        body={body}
+        onTitleChange={setTitle}
+        onBodyChange={setBody}
+      />
     </div>
   );
 }

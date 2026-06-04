@@ -6,6 +6,7 @@ import Nav from "@/components/Nav";
 import LinearKeyModal from "@/components/LinearKeyModal";
 import TeamStateSelect from "@/components/TeamStateSelect";
 import { createIssue } from "@/lib/linear";
+import TicketShelf from "@/components/TicketShelf";
 
 interface ImageData {
   id: string;
@@ -33,6 +34,35 @@ const ANALYSE_STEPS = [
   "Identifying UI patterns",
   "Writing user stories",
   "Generating acceptance criteria",
+];
+
+const WITTY_MESSAGES = [
+  "Translating "make it pop" into acceptance criteria…",
+  "Identifying which screen changed last-minute…",
+  "Quietly judging the spacing. It's fine. It's fine.",
+  "Converting designer intent to developer requirements…",
+  "Counting modals. There are always more modals.",
+  "Writing user stories for people with rich inner lives…",
+  "Discovering edge cases the design hasn't considered yet…",
+  "Checking if the empty state is actually designed…",
+  "Making sure there's a ticket for the loading state too…",
+  "Finding the component that definitely needs a v2…",
+  "Generating requirements precise enough to leave nothing to interpretation…",
+  "Wondering which screen is the real homepage…",
+  "Almost done. Probably.",
+  "Claude is having strong opinions about the nav hierarchy…",
+  "Turning annotations into acceptance criteria…",
+  // Jira burns
+  "Still faster than raising a Jira ticket manually. By a lot.",
+  "No Confluence page required. You're welcome.",
+  "Generating an entire sprint's backlog before your next Jira standup.",
+  "No ticket left behind. Unlike that Jira board nobody checks.",
+  // ⚡ Electricity facts (for Circuit & Spark)
+  "⚡ Fun fact: a bolt of lightning is five times hotter than the surface of the sun.",
+  "⚡ Fun fact: electrons in a wire move at about 1mm per second — it's the field around them that travels at near light speed.",
+  "⚡ Fun fact: lightning strikes Earth roughly 100 times every second.",
+  "⚡ Fun fact: a single lightning bolt contains enough energy to toast about 100,000 slices of bread.",
+  "⚡ Fun fact: Benjamin Franklin's kite experiment could have killed him. It almost did. Twice.",
 ];
 
 function recordActivity(issue: { id: string; identifier: string; title: string; url: string }) {
@@ -67,6 +97,17 @@ export default function BulkPage() {
   const [error, setError] = useState("");
   const [pushing, setPushing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [previewId, setPreviewId] = useState<string | null>(null);
+  const [msgIdx, setMsgIdx] = useState(0);
+
+  useEffect(() => {
+    if (analyseState !== "analysing") return;
+    setMsgIdx(Math.floor(Math.random() * WITTY_MESSAGES.length));
+    const id = setInterval(() => {
+      setMsgIdx(() => Math.floor(Math.random() * WITTY_MESSAGES.length));
+    }, 3000);
+    return () => clearInterval(id);
+  }, [analyseState]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -201,9 +242,20 @@ export default function BulkPage() {
         >
           <div className="p-6 flex flex-col gap-6 md:flex-1 md:overflow-auto">
             <div>
-              <Link href="/" className="text-xs flex items-center gap-1 mb-6" style={{ color: "var(--text-muted)" }}>
-                ← Dashboard
-              </Link>
+              <div className="flex items-center justify-between mb-6">
+                <Link href="/" className="text-xs flex items-center gap-1" style={{ color: "var(--text-muted)" }}>
+                  ← Dashboard
+                </Link>
+                {(images.length > 0 || tickets.length > 0) && (
+                  <button
+                    className="text-xs px-2.5 py-1 rounded-md transition-colors"
+                    style={{ color: "var(--text-muted)", border: "1px solid var(--border)" }}
+                    onClick={reset}
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
               <div
                 className="w-10 h-10 rounded-lg flex items-center justify-center mb-3"
                 style={{ background: "color-mix(in srgb, var(--primary) 10%, transparent)", color: "var(--primary)" }}
@@ -212,7 +264,7 @@ export default function BulkPage() {
                   <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/>
                 </svg>
               </div>
-              <h1 className="text-xl font-bold mb-1" style={{ color: "var(--text)" }}>Screen analyser</h1>
+              <h1 className="text-xl font-bold mb-1" style={{ color: "var(--text)" }}>Circuit</h1>
               <p className="text-sm" style={{ color: "var(--text-muted)" }}>
                 Paste or drop screenshots of your designs. Claude identifies each screen and writes a ticket per screen.
               </p>
@@ -262,15 +314,16 @@ export default function BulkPage() {
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {images.map((img) => (
-                    <div key={img.id} className="relative rounded-lg overflow-hidden border" style={{ borderColor: "var(--border)", width: 72, height: 72 }}>
+                    <div key={img.id} className="relative rounded-lg overflow-hidden border" style={{ borderColor: analyseState === "analysing" ? "var(--primary)" : "var(--border)", width: 72, height: 72, transition: "border-color 0.3s" }}>
                       <img src={img.preview} alt="Screenshot" className="w-full h-full object-cover" />
-                      <button
-                        className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold"
-                        style={{ background: "rgba(0,0,0,0.65)", color: "white" }}
-                        onClick={(e) => { e.stopPropagation(); removeImage(img.id); }}
-                      >
-                        ×
-                      </button>
+                      {analyseState === "analysing" && <div className="scan-line" />}
+                      {analyseState !== "analysing" && (
+                        <button
+                          className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold"
+                          style={{ background: "rgba(0,0,0,0.65)", color: "white" }}
+                          onClick={(e) => { e.stopPropagation(); removeImage(img.id); }}
+                        >×</button>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -379,6 +432,20 @@ export default function BulkPage() {
                     </span>
                   </div>
                 ))}
+
+                {/* Witty rotating message */}
+                <div className="mt-8 h-8 flex items-center">
+                  <p
+                    key={msgIdx}
+                    className="text-sm italic"
+                    style={{
+                      color: "var(--text-muted)",
+                      animation: "fade-msg 3s ease-in-out forwards",
+                    }}
+                  >
+                    {WITTY_MESSAGES[msgIdx]}
+                  </p>
+                </div>
               </div>
             </div>
           )}
@@ -474,7 +541,17 @@ export default function BulkPage() {
                       {ticket.status === "error" && (
                         <span className="text-xs shrink-0" style={{ color: "#ef4444" }} title={ticket.errorMsg}>Error</span>
                       )}
-                      <span className="text-xs shrink-0 ml-1" style={{ color: "var(--text-muted)" }}>
+                      <button
+                        className="w-7 h-7 flex items-center justify-center rounded shrink-0 transition-colors"
+                        style={{ color: "var(--text-muted)", border: "1px solid var(--border)" }}
+                        onClick={(e) => { e.stopPropagation(); setPreviewId(ticket.id); }}
+                        title="Preview ticket"
+                      >
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                        </svg>
+                      </button>
+                      <span className="text-xs shrink-0" style={{ color: "var(--text-muted)" }}>
                         {ticket.expanded ? "▲" : "▼"}
                       </span>
                     </div>
@@ -504,6 +581,24 @@ export default function BulkPage() {
           )}
         </main>
       </div>
+      <TicketShelf
+        isOpen={previewId !== null}
+        onClose={() => setPreviewId(null)}
+        title={tickets.find(t => t.id === previewId)?.title ?? ""}
+        body={tickets.find(t => t.id === previewId)?.body ?? ""}
+        onTitleChange={(v) => setTickets(ts => ts.map(t => t.id === previewId ? { ...t, title: v } : t))}
+        onBodyChange={(v) => setTickets(ts => ts.map(t => t.id === previewId ? { ...t, body: v } : t))}
+        ticketIndex={tickets.findIndex(t => t.id === previewId)}
+        totalTickets={tickets.length}
+        onPrev={() => {
+          const idx = tickets.findIndex(t => t.id === previewId);
+          if (idx > 0) setPreviewId(tickets[idx - 1].id);
+        }}
+        onNext={() => {
+          const idx = tickets.findIndex(t => t.id === previewId);
+          if (idx < tickets.length - 1) setPreviewId(tickets[idx + 1].id);
+        }}
+      />
     </div>
   );
 }

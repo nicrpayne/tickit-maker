@@ -5,7 +5,7 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
-  title: "TicKit Maker",
+  title: "TicKit",
   description: "Generate and push Linear tickets from Figma designs",
 };
 
