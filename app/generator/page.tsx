@@ -9,6 +9,7 @@ import TeamStateSelect from "@/components/TeamStateSelect";
 import { parseFigmaUrl } from "@/lib/figma";
 import { createIssue, fetchTeams } from "@/lib/linear";
 import TicketShelf from "@/components/TicketShelf";
+import { WITTY_MESSAGES } from "@/lib/messages";
 
 type GenState = "idle" | "generating" | "done";
 
@@ -41,6 +42,16 @@ export default function GeneratorPage() {
   const [successUrl, setSuccessUrl] = useState("");
   const [fetchingFigma, setFetchingFigma] = useState(false);
   const [shelfOpen, setShelfOpen] = useState(false);
+  const [msgIdx, setMsgIdx] = useState(0);
+
+  useEffect(() => {
+    if (genState !== "generating") return;
+    setMsgIdx(Math.floor(Math.random() * WITTY_MESSAGES.length));
+    const id = setInterval(() => {
+      setMsgIdx(() => Math.floor(Math.random() * WITTY_MESSAGES.length));
+    }, 5000);
+    return () => clearInterval(id);
+  }, [genState]);
   const [previewImageUrl, setPreviewImageUrl] = useState("");
 
   useEffect(() => {
@@ -280,6 +291,16 @@ export default function GeneratorPage() {
                     </span>
                   </div>
                 ))}
+
+                <div className="mt-6 h-8 flex items-center">
+                  <p
+                    key={msgIdx}
+                    className="text-sm italic"
+                    style={{ color: "var(--text-muted)", animation: "fade-msg 5s ease-in-out forwards" }}
+                  >
+                    {WITTY_MESSAGES[msgIdx]}
+                  </p>
+                </div>
               </div>
             </div>
           )}
