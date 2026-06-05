@@ -1,0 +1,28 @@
+export const WITTY_MESSAGES = [
+  'Translating "make it pop" into acceptance criteria…',
+  "Identifying which screen changed last-minute…",
+  "Quietly judging the spacing. It's fine. It's fine.",
+  "Converting designer intent to developer requirements…",
+  "Counting modals. There are always more modals.",
+  "Writing user stories for people with rich inner lives…",
+  "Discovering edge cases the design hasn't considered yet…",
+  "Checking if the empty state is actually designed…",
+  "Making sure there's a ticket for the loading state too…",
+  "Finding the component that definitely needs a v2…",
+  "Generating requirements precise enough to leave nothing to interpretation…",
+  "Wondering which screen is the real homepage…",
+  "Almost done. Probably.",
+  "Claude is having strong opinions about the nav hierarchy…",
+  "Turning annotations into acceptance criteria…",
+  // Jira burns
+  "Still faster than raising a Jira ticket manually. By a lot.",
+  "No Confluence page required. You're welcome.",
+  "Generating an entire sprint's backlog before your next Jira standup.",
+  "No ticket left behind. Unlike that Jira board nobody checks.",
+  // ⚡ Electricity facts
+  "⚡ Fun fact: a bolt of lightning is five times hotter than the surface of the sun.",
+  "⚡ Fun fact: electrons in a wire move at about 1mm per second — it's the field around them that travels at near light speed.",
+  "⚡ Fun fact: lightning strikes Earth roughly 100 times every second.",
+  "⚡ Fun fact: a single lightning bolt contains enough energy to toast about 100,000 slices of bread.",
+  "⚡ Fun fact: Benjamin Franklin's kite experiment could have killed him. It almost did. Twice.",
+];
